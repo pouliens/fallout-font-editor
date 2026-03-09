@@ -1,13 +1,54 @@
 import os
 from playwright.sync_api import sync_playwright, expect
 
-def run():
+def run_tests():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         # Navigate to the editor
         page.goto("http://localhost:8000/index.html")
+
+        # --- Test: Invalid AAF parsing ---
+
+        # Test Case 1: Unit Test AAFFile with empty buffer
+        print("Testing AAFFile with 0-byte buffer...")
+        error_msg = page.evaluate("""() => {
+            try {
+                new AAFFile(new ArrayBuffer(0));
+                return null;
+            } catch (e) {
+                return e.message;
+            }
+        }""")
+        assert error_msg == "File too small to be a valid AAF file."
+
+        # Test Case 2: Unit Test AAFFile with 4-byte buffer
+        print("Testing AAFFile with 4-byte buffer...")
+        error_msg = page.evaluate("""() => {
+            try {
+                new AAFFile(new ArrayBuffer(4));
+                return null;
+            } catch (e) {
+                return e.message;
+            }
+        }""")
+        assert error_msg == "File too small to be a valid AAF file."
+
+        # Test Case 3: UI Upload of empty file
+        print("Testing UI upload of empty.aaf...")
+        with page.expect_event("dialog") as dialog_info:
+            with page.expect_file_chooser() as fc_info:
+                page.click("#file-input")
+            file_chooser = fc_info.value
+            file_chooser.set_files("tests/fixtures/empty.aaf")
+
+        dialog = dialog_info.value
+        assert dialog.type == "alert"
+        assert "Error parsing file: File too small to be a valid AAF file." in dialog.message
+        dialog.dismiss()
+
+        # --- Test: Valid AAF editing ---
 
         # Verify title
         expect(page).to_have_title("Fallout 1 AAF Font Editor")
@@ -17,7 +58,7 @@ def run():
         with page.expect_file_chooser() as fc_info:
             page.click("#file-input")
         file_chooser = fc_info.value
-        file_chooser.set_files("test.aaf")
+        file_chooser.set_files("tests/fixtures/test.aaf")
 
         # Wait for glyph list to populate
         # Glyph 65 should be 'A'
@@ -53,4 +94,4 @@ def run():
         browser.close()
 
 if __name__ == "__main__":
-    run()
+    run_tests()
