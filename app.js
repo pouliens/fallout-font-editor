@@ -138,6 +138,11 @@ class Editor {
         this.currentColorVal = document.getElementById('current-color-val');
         this.currentGlyphInfo = document.getElementById('current-glyph-info');
 
+        this.colors = [
+            '#000', '#001a00', '#003300', '#004d00', '#006600',
+            '#008000', '#009900', '#00b300', '#00cc00', '#00ff00'
+        ];
+
         this.init();
     }
 
@@ -157,12 +162,7 @@ class Editor {
     }
 
     createPalette() {
-        const colors = [
-            '#000', '#001a00', '#003300', '#004d00', '#006600',
-            '#008000', '#009900', '#00b300', '#00cc00', '#00ff00'
-        ];
-
-        colors.forEach((color, index) => {
+        this.colors.forEach((color, index) => {
             const swatch = document.createElement('div');
             swatch.className = 'palette-swatch';
             swatch.style.backgroundColor = color;
@@ -247,20 +247,16 @@ class Editor {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        const colors = [
-            '#000', '#001a00', '#003300', '#004d00', '#006600',
-            '#008000', '#009900', '#00b300', '#00cc00', '#00ff00'
-        ];
+        this.ctx.strokeStyle = '#222';
 
         for (let y = 0; y < glyph.height; y++) {
             for (let x = 0; x < glyph.width; x++) {
                 const val = glyph.data[y * glyph.width + x];
                 if (val > 0) {
-                    this.ctx.fillStyle = colors[val] || '#fff';
+                    this.ctx.fillStyle = this.colors[val] || '#fff';
                     this.ctx.fillRect(x * this.zoom, y * this.zoom, this.zoom, this.zoom);
                 }
                 // Grid lines
-                this.ctx.strokeStyle = '#222';
                 this.ctx.strokeRect(x * this.zoom, y * this.zoom, this.zoom, this.zoom);
             }
         }
@@ -325,5 +321,5 @@ class Editor {
 
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
-    new Editor();
+    window.editor = new Editor();
 });
